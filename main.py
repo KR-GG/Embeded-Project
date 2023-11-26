@@ -109,12 +109,32 @@ class Character:
     
 class Base:
     def __init__(self, width, height):
-        self.position = np.array([0, 3*height/4+10, width, height])
+        self.state = 0
+        self.position = np.array([0, height-20, width, height])
         self.outline = "#FFFFFF"
+
+class Block:
+    def __init__(self, width, height):
+        self.state = random.choice(['moving', 'fixed'])
+        self.v = 3.5
+        self.length = random.randrange(60, 90)
+        start_position=random.randrange(0, width-self.length)
+        self.position = np.array([start_position, height+20, start_position+self.length, height])
+
+    def moving(self, width):
+        if self.state == 'moving':
+            if self.position[2] >= width:
+                self.v = -3.5
+            elif self.position[0] <= 0:
+                self.v = 3.5
+            self.position[0] += self.v
+            self.position[2] += self.v
+
 
 # 잔상이 남지 않는 코드 & 대각선 이동 가능
 my_circle = Character(joystick.width, joystick.height)
 my_base = Base(joystick.width, joystick.height)
+blocks = [Block(joystick.width, 150)]
 my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
 
 while True:
@@ -139,14 +159,16 @@ while True:
         command['right_pressed'] = True
         command['move'] = True
 
+    blocks[0].moving(joystick.width)
     my_circle.ground_check(my_base)
     my_circle.move(command)
     my_circle.re_positioning(my_base)
 
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-    my_draw.rectangle(tuple(my_base.position), fill = (0, 255, 0))
-    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0))
+    my_draw.rectangle(tuple(my_base.position), fill = (0, 255, 0, 100))
+    my_draw.rectangle(tuple(blocks[0].position), fill = (0, 255, 0, 100))
+    my_draw.ellipse(tuple(my_circle.position), outline = my_circle.outline, fill = (0, 0, 0, 100))
     #좌표는 동그라미의 왼쪽 위, 오른쪽 아래 점 (x1, y1, x2, y2)
     joystick.disp.image(my_image)
 
