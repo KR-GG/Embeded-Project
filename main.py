@@ -114,7 +114,7 @@ class Character:
             return 1
         
     def falling_check(self, ground):
-        falling = self.position[3] >= ground.position[3]
+        falling = self.position[1] >= ground.position[3]
 
         if falling:
             return 1
@@ -124,13 +124,13 @@ class Character:
     
     def move_up(self, t_up):
         if t_up:
-            self.position[1] += 5
-            self.position[3] += 5
+            self.position[1] += 10
+            self.position[3] += 10
 
     def move_down(self, t_down):
         if t_down:
-            self.position[1] -= 10
-            self.position[3] -= 10
+            self.position[1] -= 14
+            self.position[3] -= 14
 
 class Base:
     def __init__(self, width, height):
@@ -142,7 +142,7 @@ class Block:
     def __init__(self, width, height):
         self.state = random.choice(['moving', 'fixed'])
         self.v = 3.5
-        self.length = random.randrange(60, 90)
+        self.length = random.randrange(80, 100)
         start_position=random.randrange(0, width-self.length)
         self.position = np.array([start_position, height-20, start_position+self.length, height])
 
@@ -157,13 +157,13 @@ class Block:
 
     def move_up(self, t_up):
         if t_up:
-            self.position[1] += 5
-            self.position[3] += 5
+            self.position[1] += 10
+            self.position[3] += 10
 
     def move_down(self, t_down):
         if t_down:
-            self.position[1] -= 10
-            self.position[3] -= 10
+            self.position[1] -= 14
+            self.position[3] -= 14
 
 
 # 잔상이 남지 않는 코드 & 대각선 이동 가능
@@ -218,19 +218,34 @@ while True:
             blocks = blocks[1:]
             blocks.append(Block(joystick.width, blocks[-1].position[3]-70))
         stair += 1
-        t_up += 14
+        if stair == 1: t_up += 5
+        else: t_up += 7
+    
     my_circle.move_up(t_up)
     for block in blocks:
         block.move_up(t_up)
     t_up -= 1 if t_up else 0
 
     fall = my_circle.falling_check(blocks[current_index])
-    if fall == 1:
+    if fall:
         fall_stack += 1
         stair -= 1
         current_index -= 1
         next_index -= 1
         t_down += 7
+    if fall_stack == 2:
+        print("Game Over")
+        my_circle = Character(joystick.width, joystick.height)
+        my_base = Base(joystick.width, joystick.height)
+        blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+        my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+        stair = 0
+        current_index = 2
+        next_index = 3
+        t_up = 0
+        t_down = 0
+        fall_stack = 0
+        continue
     my_circle.move_down(t_down)
     for block in blocks:
         block.move_down(t_down)
