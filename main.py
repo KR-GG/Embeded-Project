@@ -112,14 +112,25 @@ class Character:
             self.state = 'ground'
             self.vertical_speed = 0
             return 1
+        
+    def falling_check(self, ground):
+        falling = self.position[3] >= ground.position[3]
+
+        if falling:
+            return 1
 
     def on_ground(self, ground):
         return ground.position[1] <= self.position[3] <= ground.position[1]+10 and ground.position[0] < (self.position[0]+self.position[2])/2 < ground.position[2]
     
-    def move_up(self, t):
-        if t:
+    def move_up(self, t_up):
+        if t_up:
             self.position[1] += 5
             self.position[3] += 5
+
+    def move_down(self, t_down):
+        if t_down:
+            self.position[1] -= 10
+            self.position[3] -= 10
 
 class Base:
     def __init__(self, width, height):
@@ -144,10 +155,15 @@ class Block:
             self.position[0] += self.v
             self.position[2] += self.v
 
-    def move_up(self, t):
-        if t:
+    def move_up(self, t_up):
+        if t_up:
             self.position[1] += 5
             self.position[3] += 5
+
+    def move_down(self, t_down):
+        if t_down:
+            self.position[1] -= 10
+            self.position[3] -= 10
 
 
 # 잔상이 남지 않는 코드 & 대각선 이동 가능
@@ -158,7 +174,9 @@ my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255
 stair = 0
 current_index = 2
 next_index = 3
-t = 0
+t_up = 0
+t_down = 0
+fall_stack = 0
 
 while True:
     spawn_h = 380 - 70 * len(blocks)
@@ -189,26 +207,43 @@ while True:
 
     for block in blocks:
         block.moving(joystick.width)
+
     up = my_circle.next_block_check(blocks[next_index])
     if up == 1:
+        if fall_stack:
+            current_index += 1
+            next_index += 1
+            fall_stack -= 1
+        else:
+            blocks = blocks[1:]
+            blocks.append(Block(joystick.width, blocks[-1].position[3]-70))
         stair += 1
-        blocks = blocks[1:]
-        blocks.append(Block(joystick.width, -40))
-        t += 14
-    my_circle.move_up(t)
+        t_up += 14
+    my_circle.move_up(t_up)
     for block in blocks:
-        block.move_up(t)
-    t -= 1 if t else 0
+        block.move_up(t_up)
+    t_up -= 1 if t_up else 0
+
+    fall = my_circle.falling_check(blocks[current_index])
+    if fall == 1:
+        fall_stack += 1
+        stair -= 1
+        current_index -= 1
+        next_index -= 1
+        t_down += 7
+    my_circle.move_down(t_down)
+    for block in blocks:
+        block.move_down(t_down)
+    t_down -= 1 if t_down else 0
 
     if stair == 0:
         my_circle.ground_check(my_base)
         my_circle.move(command)
-        my_circle.re_positioning(my_base)
-    
+        if my_circle.state == 'ground': my_circle.re_positioning(my_base)
     else:
         my_circle.ground_check(blocks[current_index])
         my_circle.move(command)
-        my_circle.re_positioning(blocks[current_index])
+        if my_circle.state == 'ground': my_circle.re_positioning(blocks[current_index])
 
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     my_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
