@@ -252,6 +252,7 @@ while True:
     fall = my_ch.falling_check(blocks[current_index])
     if fall:
         if stair == 1:
+            fall_stack += 1
             stair = 0
             current_index -= 1
             next_index -= 1
