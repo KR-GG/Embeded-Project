@@ -120,6 +120,7 @@ class Character:
         
         if on_ground:
             self.state = 'ground'
+            self.re_positioning(ground)
             self.vertical_speed = 0
         
         else:
@@ -137,13 +138,12 @@ class Character:
             return 1
         
     def falling_check(self, ground):
-        falling = self.position[1] >= ground.position[1] + 20
+        falling = self.position[1]+20 >= ground.position[1] + 20
 
-        if falling:
-            return 1
+        return falling
 
     def on_ground(self, ground):
-        return ground.position[1] <= self.position[1]+20 <= ground.position[1]+10 and ground.position[0] < self.position[0]+10 < ground.position[0] + ground.length
+        return ground.position[1] <= self.position[1]+20 <= ground.position[1]+20 and ground.position[0] <= self.position[0]+10 <= ground.position[0] + ground.length
     
     def move_up(self, t_up):
         if t_up:
@@ -165,17 +165,17 @@ class Block:
     def __init__(self, width, height):
         self.state = random.choice(['moving', 'fixed'])
         self.icy = random.choice(['true', 'false'])
-        self.v = 3
-        self.length = int(random.randrange(80, 120))
-        start_position=int(random.randrange(0, width-self.length))
+        self.v = 3.5
+        self.length = random.randrange(80, 120)
+        start_position=random.randrange(0, width-self.length)
         self.position = np.array([start_position, height-20])
 
     def moving(self, width):
         if self.state == 'moving':
             if self.position[0] + self.length >= width:
-                self.v = -3
+                self.v = -3.5
             elif self.position[0] <= 0:
-                self.v = 3
+                self.v = 3.5
             self.position[0] += self.v
 
     def move_up(self, t_up):
@@ -251,13 +251,19 @@ while True:
 
     fall = my_ch.falling_check(blocks[current_index])
     if fall:
-        score -= 5
-        fall_stack += 1
-        stair -= 1
-        current_index -= 1
-        next_index -= 1
-        t_down += 7
-    if fall_stack == 2:
+        if stair == 1:
+            stair = 0
+            current_index -= 1
+            next_index -= 1
+            t_down += 5
+        else:
+            score -= 5
+            fall_stack += 1
+            stair -= 1
+            current_index -= 1
+            next_index -= 1
+            t_down += 5
+    if fall_stack > 2:
         print("Game Over")
         my_ch = Character(joystick.width, joystick.height)
         my_base = Base(joystick.width, joystick.height)
@@ -279,11 +285,9 @@ while True:
     if stair == 0:
         my_ch.ground_check(my_base)
         my_ch.move(my_base, command)
-        if my_ch.state == 'ground': my_ch.re_positioning(my_base)
     else:
         my_ch.ground_check(blocks[current_index])
         my_ch.move(blocks[current_index], command)
-        if my_ch.state == 'ground': my_ch.re_positioning(blocks[current_index])
 
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
@@ -295,3 +299,4 @@ while True:
     if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
     bg_image.paste(star_character, tuple(my_ch.position), star_character)
     joystick.disp.image(bg_image)
+    print(stair)
