@@ -69,17 +69,16 @@ icy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_2
 bg_draw = ImageDraw.Draw(bg_image)
 
 class Character:
-    def __init__(self, width, height):
-        self.appearance = 'circle'
-        self.state = None
+    def __init__(self):
+        self.state = 'ground'
+        self.health = 3
         self.vertical_speed = 0
         self.horizontal_speed = 0
-        self.position = np.array([int(width/2) - 10, height-40])
-        self.outline = "#FFFFFF"
+        self.position = np.array([110, 200])
 
     def move(self, ground, command = None):
         if command['jump'] and self.vertical_speed == 0:
-            self.vertical_speed = -10 * np.sqrt(3)
+            self.vertical_speed = -16
             self.horizontal_speed = 0
 
         self.position[1] += self.vertical_speed
@@ -110,7 +109,6 @@ class Character:
                 self.horizontal_speed += 5
             self.position[0] += self.horizontal_speed
         
-
     def re_positioning(self, ground):
         if (self.position[1]+20 > ground.position[1]): 
             self.position[1] = ground.position[1] - 20
@@ -136,6 +134,7 @@ class Character:
             self.state = 'ground'
             self.vertical_speed = 0
             return 1
+        return 0
         
     def falling_check(self, ground):
         falling = self.position[1]+20 >= ground.position[1] + 20
@@ -153,21 +152,39 @@ class Character:
         if t_down:
             self.position[1] -= 14
 
+class Enemy:
+    def __init__(self, block):
+        self.position = np.array([block.position[0] + random.randint(1, block.length), block.position[1] - 40])
+
+
 class Base:
-    def __init__(self, width, height):
+    def __init__(self):
         self.state = 'fixed'
+        self.enemy = 'false'
         self.icy = 'false'
-        self.position = np.array([0, height-20])
-        self.outline = "#FFFFFF"
+        self.v = 0
+        self.position = np.array([0, 220])
         self.length = 240
+
+    def moving(self, width):
+        pass
+
+    def move_up(self, t_up):
+        if t_up:
+            self.position[1] += 10
+
+    def move_down(self, t_down):
+        if t_down:
+            self.position[1] -= 14
 
 class Block:
     def __init__(self, width, height):
         self.state = random.choice(['moving', 'fixed'])
+        self.enemy = random.choice(['true', 'false'])
         self.icy = random.choice(['true', 'false'])
         self.v = 3.5
-        self.length = random.randrange(80, 120)
-        start_position=random.randrange(0, width-self.length)
+        self.length = random.randint(80, 120)
+        start_position=random.randint(0, width-self.length)
         self.position = np.array([start_position, height-20])
 
     def moving(self, width):
@@ -188,9 +205,10 @@ class Block:
 
 
 # 잔상이 남지 않는 코드 & 대각선 이동 가능
-my_ch = Character(joystick.width, joystick.height)
-my_base = Base(joystick.width, joystick.height)
+my_ch = Character()
+my_base = Base()
 blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+enemies = [0, 0, 0, 0, 0, 0]
 bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
 stair = 0
 current_index = 2
@@ -199,13 +217,13 @@ t_up = 0
 t_down = 0
 fall_stack = 0
 score = 0
+spawn_h = 380
+while spawn_h >= 30:
+    blocks.append(Block(joystick.width, spawn_h))
+    spawn_h -= 70
+blocks[2] = my_base
 
 while True:
-    spawn_h = 380 - 70 * len(blocks)
-    while spawn_h >= 30:
-        blocks.append(Block(joystick.width, spawn_h))
-        spawn_h -= 70
-
     command = {'move': False, 'jump': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
     
     if not joystick.button_A.value: # A pressed
@@ -231,7 +249,7 @@ while True:
         block.moving(joystick.width)
 
     up = my_ch.next_block_check(blocks[next_index])
-    if up == 1:
+    if up:
         score += 10
         if fall_stack:
             current_index += 1
@@ -240,10 +258,9 @@ while True:
         else:
             blocks = blocks[1:]
             blocks.append(Block(joystick.width, blocks[-1].position[1]-50))
+        t_up += 7 if stair else 5
         stair += 1
-        if stair == 1: t_up += 5
-        else: t_up += 7
-    
+        
     my_ch.move_up(t_up)
     for block in blocks:
         block.move_up(t_up)
@@ -251,24 +268,30 @@ while True:
 
     fall = my_ch.falling_check(blocks[current_index])
     if fall:
-        if stair == 1:
+        if stair == 0: fall_stack = 3
+        elif stair == 1:
+            score -= 10
             fall_stack += 1
             stair = 0
             current_index -= 1
             next_index -= 1
-            t_down += 5
+            my_ch.position[1] -= 8
+            for block in blocks:
+                block.position[1] -= 8
+            t_down += 3
         else:
-            score -= 5
+            score -= 10
             fall_stack += 1
             stair -= 1
             current_index -= 1
             next_index -= 1
             t_down += 5
+
     if fall_stack > 2:
-        print("Game Over")
-        my_ch = Character(joystick.width, joystick.height)
-        my_base = Base(joystick.width, joystick.height)
+        my_ch = Character()
+        my_base = Base()
         blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+        enemies = [0, 0, 0, 0, 0, 0]
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
         stair = 0
         current_index = 2
@@ -277,18 +300,20 @@ while True:
         t_down = 0
         fall_stack = 0
         score = 0
+        spawn_h = 380
+        while spawn_h >= 30:
+            blocks.append(Block(joystick.width, spawn_h))
+            spawn_h -= 70
+        blocks[2] = my_base
         continue
+
     my_ch.move_down(t_down)
     for block in blocks:
         block.move_down(t_down)
     t_down -= 1 if t_down else 0
-
-    if stair == 0:
-        my_ch.ground_check(my_base)
-        my_ch.move(my_base, command)
-    else:
-        my_ch.ground_check(blocks[current_index])
-        my_ch.move(blocks[current_index], command)
+    
+    my_ch.ground_check(blocks[current_index])
+    my_ch.move(blocks[current_index], command)
 
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
