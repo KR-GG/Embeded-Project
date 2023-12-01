@@ -152,10 +152,19 @@ class Character:
         if t_down:
             self.position[1] -= 14
 
+    def enemy_check(self, enemies):
+        for index, enemy in enumerate(enemies):
+            if enemy:
+                if (enemy.position[0]-10 <= self.position[0] <= enemy.position[0]+10 and enemy.position[1]-20 <= self.position[1] <= enemy.position[1]+20) or (enemy.position[0]-20 <= self.position[0] <= enemy.position[0]+20 and enemy.position[1]-10 <= self.position[1] <= enemy.position[1]+10):
+                    return index
+        return -1
+
 class Enemy:
     def __init__(self, block):
-        self.position = np.array([block.position[0] + random.randint(1, block.length), block.position[1] - 40])
+        self.position = np.array([block.position[0] + random.randint(1, block.length), block.position[1] - 25])
 
+    def re_positioning(self, block):
+        self.position[1] = block.position[1] -25
 
 class Base:
     def __init__(self):
@@ -180,7 +189,7 @@ class Base:
 class Block:
     def __init__(self, width, height):
         self.state = random.choice(['moving', 'fixed'])
-        self.enemy = random.choice(['true', 'false'])
+        self.enemy = random.choice(['true', 'true','true','false', 'false'])
         self.icy = random.choice(['true', 'false'])
         self.v = 3.5
         self.length = random.randint(80, 120)
@@ -222,6 +231,9 @@ while spawn_h >= 30:
     blocks.append(Block(joystick.width, spawn_h))
     spawn_h -= 70
 blocks[2] = my_base
+for index, block in enumerate(blocks):
+    if block.state == 'fixed' and block.enemy =='true':
+        enemies[index] = Enemy(block)
 
 while True:
     command = {'move': False, 'jump': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
@@ -258,6 +270,11 @@ while True:
         else:
             blocks = blocks[1:]
             blocks.append(Block(joystick.width, blocks[-1].position[1]-50))
+            enemies = enemies[1:]
+            if blocks[-1].enemy == 'true' and blocks[-1].state == 'fixed':
+                enemies.append(Enemy(blocks[-1]))
+            else:
+                enemies.append(0)
         t_up += 7 if stair else 5
         stair += 1
         
@@ -305,6 +322,9 @@ while True:
             blocks.append(Block(joystick.width, spawn_h))
             spawn_h -= 70
         blocks[2] = my_base
+        for index, block in enumerate(blocks):
+            if block.state == 'fixed' and block.enemy =='true':
+                enemies[index] = Enemy(block)
         continue
 
     my_ch.move_down(t_down)
@@ -315,14 +335,50 @@ while True:
     my_ch.ground_check(blocks[current_index])
     my_ch.move(blocks[current_index], command)
 
+    for index, enemy in enumerate(enemies):
+        if enemy:
+            enemy.re_positioning(blocks[index])
+
+    hit = my_ch.enemy_check(enemies)
+    if hit != -1:
+        my_ch.health -= 1
+        enemies[hit] = 0
+        
+    if my_ch.health == 0:
+        my_ch = Character()
+        my_base = Base()
+        blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+        enemies = [0, 0, 0, 0, 0, 0]
+        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+        stair = 0
+        current_index = 2
+        next_index = 3
+        t_up = 0
+        t_down = 0
+        fall_stack = 0
+        score = 0
+        spawn_h = 380
+        while spawn_h >= 30:
+            blocks.append(Block(joystick.width, spawn_h))
+            spawn_h -= 70
+        blocks[2] = my_base
+        for index, block in enumerate(blocks):
+            if block.state == 'fixed' and block.enemy =='true':
+                enemies[index] = Enemy(block)
+        continue
+
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
     for block in blocks:
+        if block == my_base: pass
         if block.icy == 'true':
             bg_image.paste(icy_image.resize(tuple(map(int, (block.length, 20)))), tuple(block.position))
         else:
             bg_image.paste(block_image.resize(tuple(map(int,(block.length, 20)))), tuple(block.position))
     if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
+    for enemy in enemies:
+        if enemy:
+            bg_image.paste(star_character, tuple(enemy.position), star_character)
     bg_image.paste(star_character, tuple(my_ch.position), star_character)
     joystick.disp.image(bg_image)
     print(stair)
