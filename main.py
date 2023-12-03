@@ -69,6 +69,8 @@ icy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_2
 enemy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_img.png')
 enemy_opp_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_opp_img.png')
 cloud_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/cloud_img.png')
+fire_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/fire.png')
+heart_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/heart.png')
 
 bg_draw = ImageDraw.Draw(bg_image)
 
@@ -277,12 +279,12 @@ while True:
 
     up = my_ch.next_block_check(blocks[next_index])
     if up:
-        score += 10
         if fall_stack:
             current_index += 1
             next_index += 1
             fall_stack -= 1
         else:
+            score += 10
             blocks = blocks[1:]
             blocks.append(Block(joystick.width, blocks[-1].position[1]-50))
             enemies = enemies[1:]
@@ -302,7 +304,6 @@ while True:
     if fall:
         if stair == 0: fall_stack = 3
         elif stair == 1:
-            score -= 10
             fall_stack += 1
             stair = 0
             current_index -= 1
@@ -312,7 +313,6 @@ while True:
                 block.position[1] -= 8
             t_down += 3
         else:
-            score -= 10
             fall_stack += 1
             stair -= 1
             current_index -= 1
@@ -389,10 +389,9 @@ while True:
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
     temp = cloud_start
-    while cloud_start > -240:
-        bg_image.paste(cloud_image, (0, cloud_start), cloud_image)
-        cloud_start -= 240
-    cloud_start = temp
+    while temp > -240:
+        bg_image.paste(cloud_image, (0, temp), cloud_image)
+        temp -= 240
     for block in blocks:
         if block == my_base: pass
         if block.icy == 'true':
@@ -404,8 +403,14 @@ while True:
         if enemy:
             enemy_img = enemy_image if enemy.v > 0 else enemy_opp_image
             bg_image.paste(enemy_img, tuple(enemy.position), enemy_img)
-    bg_draw.text((0, 5), f"SCORE {score}", (0,0,0,100))
-    bg_draw.text((0, 15), f"LIFE {health}", (0,0,0,100))
+    font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
+    bg_draw.text((3, 2), f"SCORE {score}", font = font, fill = (0,0,0,100))
+    bg_draw.text((3, 18), f"LIFE", font = font, fill = (0,0,0,100))
+    temp = health
+    while temp > 0:
+        heart_position = 18 + temp*20
+        bg_image.paste(heart_image, (heart_position, 20), heart_image)
+        temp -= 1
     try:
         my_ch_img
     except NameError: 
