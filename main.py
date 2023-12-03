@@ -65,13 +65,14 @@ star_character = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/star_ch
 base_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_240_20.png')
 block_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20.png')
 icy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20_icy.png')
+enemy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_img.png')
+cloud_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/cloud_img.png')
 
 bg_draw = ImageDraw.Draw(bg_image)
 
 class Character:
     def __init__(self):
         self.state = 'ground'
-        self.health = 3
         self.vertical_speed = 0
         self.horizontal_speed = 0
         self.position = np.array([110, 200])
@@ -86,7 +87,7 @@ class Character:
         if ground.icy == 'true':
             if self.horizontal_speed:
                 self.horizontal_speed += 1 if self.horizontal_speed<0 else -1
-            if ground.state == 'moving':
+            if ground.state == 'moving' and self.state == 'ground':
                     self.horizontal_speed += ground.v
             if command['left_pressed']:
                 self.horizontal_speed -= 7
@@ -97,11 +98,12 @@ class Character:
                 self.horizontal_speed += 5
             if command['right_pressed']:
                 self.horizontal_speed -= 5
-            if ground.state == 'moving': self.horizontal_speed -= ground.v
+            if ground.state == 'moving' and self.state == 'ground':
+                self.horizontal_speed -= ground.v
         
         else:
             self.horizontal_speed = 0
-            if ground.state == 'moving':
+            if ground.state == 'moving' and self.state == 'ground':
                 self.horizontal_speed += ground.v
             if command['left_pressed']:
                 self.horizontal_speed -= 5
@@ -127,7 +129,7 @@ class Character:
             else: self.state = 'fly'
     
     def next_block_check(self, next_block):
-        on_next = self.on_ground(next_block)
+        on_next = self.on_ground(next_block) and self.vertical_speed >= 0
 
         if on_next:
             self.re_positioning(next_block)
@@ -144,13 +146,17 @@ class Character:
     def on_ground(self, ground):
         return ground.position[1] <= self.position[1]+20 <= ground.position[1]+20 and ground.position[0] <= self.position[0]+10 <= ground.position[0] + ground.length
     
-    def move_up(self, t_up):
+    def move_up(self, t_up, cloud_start):
         if t_up:
             self.position[1] += 10
+            return cloud_start + 10
+        return cloud_start
 
-    def move_down(self, t_down):
+    def move_down(self, t_down, cloud_start):
         if t_down:
             self.position[1] -= 14
+            return cloud_start -14
+        return cloud_start
 
     def enemy_check(self, enemies):
         for index, enemy in enumerate(enemies):
@@ -161,7 +167,7 @@ class Character:
 
 class Enemy:
     def __init__(self, block):
-        self.position = np.array([block.position[0] + random.randint(1, block.length), block.position[1] - 25])
+        self.position = np.array([block.position[0] + random.randint(1, block.length - 11), block.position[1] - 25])
 
     def re_positioning(self, block):
         self.position[1] = block.position[1] -25
@@ -213,12 +219,13 @@ class Block:
             self.position[1] -= 14
 
 
-# 잔상이 남지 않는 코드 & 대각선 이동 가능
 my_ch = Character()
 my_base = Base()
 blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
 enemies = [0, 0, 0, 0, 0, 0]
 bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+cloud_start = 0
+health = 3
 stair = 0
 current_index = 2
 next_index = 3
@@ -278,7 +285,7 @@ while True:
         t_up += 7 if stair else 5
         stair += 1
         
-    my_ch.move_up(t_up)
+    cloud_start = my_ch.move_up(t_up, cloud_start)
     for block in blocks:
         block.move_up(t_up)
     t_up -= 1 if t_up else 0
@@ -310,6 +317,8 @@ while True:
         blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
         enemies = [0, 0, 0, 0, 0, 0]
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+        cloud_start = 0
+        health = 3
         stair = 0
         current_index = 2
         next_index = 3
@@ -327,7 +336,7 @@ while True:
                 enemies[index] = Enemy(block)
         continue
 
-    my_ch.move_down(t_down)
+    cloud_start = my_ch.move_down(t_down, cloud_start)
     for block in blocks:
         block.move_down(t_down)
     t_down -= 1 if t_down else 0
@@ -341,15 +350,17 @@ while True:
 
     hit = my_ch.enemy_check(enemies)
     if hit != -1:
-        my_ch.health -= 1
+        health -= 1
         enemies[hit] = 0
-        
-    if my_ch.health == 0:
+
+    if health == 0:
         my_ch = Character()
         my_base = Base()
         blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
         enemies = [0, 0, 0, 0, 0, 0]
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+        cloud_start = 0
+        health = 3
         stair = 0
         current_index = 2
         next_index = 3
@@ -369,6 +380,11 @@ while True:
 
     #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
     bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+    temp = cloud_start
+    while cloud_start > -240:
+        bg_image.paste(cloud_image, (0, cloud_start), cloud_image)
+        cloud_start -= 240
+    cloud_start = temp
     for block in blocks:
         if block == my_base: pass
         if block.icy == 'true':
@@ -378,7 +394,9 @@ while True:
     if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
     for enemy in enemies:
         if enemy:
-            bg_image.paste(star_character, tuple(enemy.position), star_character)
+            bg_image.paste(enemy_image, tuple(enemy.position), enemy_image)
+    bg_draw.text((0, 5), f"SCORE {score}", (0,0,0,100))
+    bg_draw.text((0, 15), f"LIFE {health}", (0,0,0,100))
     bg_image.paste(star_character, tuple(my_ch.position), star_character)
     joystick.disp.image(bg_image)
     print(stair)
