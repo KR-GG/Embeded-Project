@@ -253,7 +253,7 @@ class Block:
     def __init__(self, width, height):
         self.state = random.choice(['moving', 'fixed'])
         self.enemy = random.choice(['true', 'true', 'true','false', 'false'])
-        self.heart = random.choice(['true', 'false', 'false', 'false'])
+        self.heart = random.choice(['true', 'false', 'false', 'false', 'false'])
         self.icy = random.choice(['true', 'false'])
         self.v = 3.5
         self.length = random.randint(80, 120)
@@ -276,7 +276,8 @@ class Block:
         if t_down:
             self.position[1] -= 14
 
-
+start_page = 1
+end_page = 0
 my_ch = Character()
 my_base = Base()
 blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
@@ -307,7 +308,7 @@ for index, block in enumerate(blocks):
 
 while True:
     cooltime -= 1 if cooltime else 0
-    command = {'move': False, 'jump': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+    command = {'move': False, 'jump': False, 'attack': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
     
     if not joystick.button_A.value: # A pressed
         command['jump'] = True
@@ -329,187 +330,219 @@ while True:
         command['move'] = True
 
     if not joystick.button_B.value and cooltime == 0: # B pressed
-        fireball = Fire(my_ch)
-        cooltime += 50
+        command['attack'] = True
+        try:
+            fireball = Fire(my_ch)
+            cooltime += 50
+        except NameError:
+            pass
 
-    for block in blocks:
-        block.moving(joystick.width)
+    if (start_page == 0 and end_page == 0):
+        for block in blocks:
+            block.moving(joystick.width)
 
-    up = my_ch.next_block_check(blocks[next_index])
-    if up:
-        if fall_stack:
-            current_index += 1
-            next_index += 1
-            fall_stack -= 1
-        else:
-            score += 10
-            blocks = blocks[1:]
-            blocks.append(Block(joystick.width, blocks[-1].position[1]-50))
-            enemies = enemies[1:]
-            if blocks[-1].enemy == 'true' and blocks[-1].state == 'fixed':
-                enemies.append(Enemy(blocks[-1]))
+        up = my_ch.next_block_check(blocks[next_index])
+        if up:
+            if fall_stack:
+                current_index += 1
+                next_index += 1
+                fall_stack -= 1
             else:
-                enemies.append(0)
-            hearts = hearts[1:]
-            if blocks[-1].state == 'moving' and blocks[-1].enemy == 'false' and blocks[-1].heart == 'true':
-                hearts.append(Heart(blocks[-1]))
-            else:
-                hearts.append(0)
-        t_up += 7 if stair else 5
-        stair += 1
+                score += 10
+                blocks = blocks[1:]
+                blocks.append(Block(joystick.width, blocks[-1].position[1]-50))
+                enemies = enemies[1:]
+                if blocks[-1].enemy == 'true' and blocks[-1].state == 'fixed':
+                    enemies.append(Enemy(blocks[-1]))
+                else:
+                    enemies.append(0)
+                hearts = hearts[1:]
+                if blocks[-1].state == 'moving' and blocks[-1].enemy == 'false' and blocks[-1].heart == 'true':
+                    hearts.append(Heart(blocks[-1]))
+                else:
+                    hearts.append(0)
+            t_up += 7 if stair else 5
+            stair += 1
         
-    cloud_start = my_ch.move_up(t_up, cloud_start)
-    for block in blocks:
-        block.move_up(t_up)
-    if fireball: fireball.move_up(t_up)
-    t_up -= 1 if t_up else 0
+        cloud_start = my_ch.move_up(t_up, cloud_start)
+        for block in blocks:
+            block.move_up(t_up)
+        if fireball: fireball.move_up(t_up)
+        t_up -= 1 if t_up else 0
 
-    fall = my_ch.falling_check(blocks[current_index])
-    if fall:
-        if stair == 0: fall_stack = 3
-        elif stair == 1:
-            fall_stack += 1
-            stair = 0
-            current_index -= 1
-            next_index -= 1
-            my_ch.position[1] -= 8
-            for block in blocks:
-                block.position[1] -= 8
-            t_down += 3
-        else:
-            fall_stack += 1
-            stair -= 1
-            current_index -= 1
-            next_index -= 1
-            t_down += 5
+        fall = my_ch.falling_check(blocks[current_index])
+        if fall:
+            if stair == 0: fall_stack = 3
+            elif stair == 1:
+                fall_stack += 1
+                stair = 0
+                current_index -= 1
+                next_index -= 1
+                my_ch.position[1] -= 8
+                for block in blocks:
+                    block.position[1] -= 8
+                t_down += 3
+            else:
+                fall_stack += 1
+                stair -= 1
+                current_index -= 1
+                next_index -= 1
+                t_down += 5
 
-    if fall_stack > 2:
-        my_ch = Character()
-        my_base = Base()
-        blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
-        enemies = [0, 0, 0, 0, 0, 0]
-        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-        cloud_start = 0
-        health = 3
-        stair = 0
-        current_index = 2
-        next_index = 3
-        t_up = 0
-        t_down = 0
-        fall_stack = 0
-        score = 0
-        cooltime = 0
-        spawn_h = 380
-        while spawn_h >= 30:
-            blocks.append(Block(joystick.width, spawn_h))
-            spawn_h -= 70
-        blocks[2] = my_base
-        for index, block in enumerate(blocks):
-            if block.state == 'fixed' and block.enemy =='true':
-                enemies[index] = Enemy(block)
-        continue
-
-    cloud_start = my_ch.move_down(t_down, cloud_start)
-    for block in blocks:
-        block.move_down(t_down)
-    if fireball: fireball.move_down(t_down)
-    t_down -= 1 if t_down else 0
-    
-    my_ch.ground_check(blocks[current_index])
-    my_ch.move(blocks[current_index], command)
-
-    if fireball:
-        fireball.move()
-        hit = fireball.enemy_check(enemies)
-        if hit != -1:
-            score += 10
-            enemies[hit] = 0
-        head = fireball.position[0] if fireball.state == 'left' else fireball.position[0] + 15
-        if -15 > head or joystick.width < head:
+        if fall_stack > 2:
+            start_page = 1
+            end_page = 1
+            my_ch = Character()
+            my_base = Base()
+            blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+            enemies = [0, 0, 0, 0, 0, 0]
+            hearts = [0, 0, 0, 0, 0, 0]
             fireball = 0
+            bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+            cloud_start = 0
+            health = 3
+            stair = 0
+            current_index = 2
+            next_index = 3
+            t_up = 0
+            t_down = 0
+            fall_stack = 0
+            score = 0
+            cooltime = 0
+            spawn_h = 380
+            while spawn_h >= 30:
+                blocks.append(Block(joystick.width, spawn_h))
+                spawn_h -= 70
+            blocks[2] = my_base
+            for index, block in enumerate(blocks):
+                if block.state == 'fixed' and block.enemy =='true':
+                    enemies[index] = Enemy(block)
+                if block.state == 'moving' and block.enemy =='false' and block.heart == 'true':
+                    hearts[index] = Heart(block)
+            continue
 
-    for index, enemy in enumerate(enemies):
-        if enemy:
-            enemy.re_positioning(blocks[index])
-    for index, heart in enumerate(hearts):
-        if heart:
-            heart.re_positioning(blocks[index])
+        cloud_start = my_ch.move_down(t_down, cloud_start)
+        for block in blocks:
+            block.move_down(t_down)
+        if fireball: fireball.move_down(t_down)
+        t_down -= 1 if t_down else 0
+    
+        my_ch.ground_check(blocks[current_index])
+        my_ch.move(blocks[current_index], command)
 
-    hit = my_ch.enemy_check(enemies)
-    if hit != -1:
-        health -= 1
-        enemies[hit] = 0
+        if fireball:
+            fireball.move()
+            hit = fireball.enemy_check(enemies)
+            if hit != -1:
+                score += 10
+                enemies[hit] = 0
+            head = fireball.position[0] if fireball.state == 'left' else fireball.position[0] + 15
+            if -15 > head or joystick.width < head:
+                fireball = 0
 
-    if health == 0:
-        my_ch = Character()
-        my_base = Base()
-        blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
-        enemies = [0, 0, 0, 0, 0, 0]
+        for index, enemy in enumerate(enemies):
+            if enemy:
+                enemy.re_positioning(blocks[index])
+        for index, heart in enumerate(hearts):
+            if heart:
+                heart.re_positioning(blocks[index])
+
+        hit = my_ch.enemy_check(enemies)
+        if hit != -1:
+            health -= 1
+            enemies[hit] = 0
+
+        if health == 0:
+            start_page = 1
+            end_page = 1
+            my_ch = Character()
+            my_base = Base()
+            blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
+            enemies = [0, 0, 0, 0, 0, 0]
+            hearts = [0, 0, 0, 0, 0, 0]
+            fireball = 0
+            bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
+            cloud_start = 0
+            health = 3
+            stair = 0
+            current_index = 2
+            next_index = 3
+            t_up = 0
+            t_down = 0
+            fall_stack = 0
+            score = 0
+            cooltime = 0
+            spawn_h = 380
+            while spawn_h >= 30:
+                blocks.append(Block(joystick.width, spawn_h))
+                spawn_h -= 70
+            blocks[2] = my_base
+            for index, block in enumerate(blocks):
+                if block.state == 'fixed' and block.enemy =='true':
+                    enemies[index] = Enemy(block)
+                if block.state == 'moving' and block.enemy =='false' and block.heart == 'true':
+                    hearts[index] = Heart(block)
+            continue
+
+        hit = my_ch.heart_check(hearts)
+        if hit != -1:
+            health += 1
+            hearts[hit] = 0
+
+        #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-        cloud_start = 0
-        health = 3
-        stair = 0
-        current_index = 2
-        next_index = 3
-        t_up = 0
-        t_down = 0
-        fall_stack = 0
-        score = 0
-        cooltime = 0
-        spawn_h = 380
-        while spawn_h >= 30:
-            blocks.append(Block(joystick.width, spawn_h))
-            spawn_h -= 70
-        blocks[2] = my_base
-        for index, block in enumerate(blocks):
-            if block.state == 'fixed' and block.enemy =='true':
-                enemies[index] = Enemy(block)
-        continue
+        temp = cloud_start
+        while temp > -240:
+            bg_image.paste(cloud_image, (0, temp), cloud_image)
+            temp -= 240
+        for block in blocks:
+            if block == my_base: pass
+            if block.icy == 'true':
+                bg_image.paste(icy_image.resize(tuple(map(int, (block.length, 20)))), tuple(block.position))
+            else:
+                bg_image.paste(block_image.resize(tuple(map(int,(block.length, 20)))), tuple(block.position))
+        if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
+        for enemy in enemies:
+            if enemy:
+                enemy_img = enemy_image if enemy.v > 0 else enemy_opp_image
+                bg_image.paste(enemy_img, tuple(enemy.position), enemy_img)
+        for heart in hearts:
+            if heart:
+                bg_image.paste(heart_image, tuple(heart.position), heart_image)
+        font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
+        bg_draw.text((3, 2), f"SCORE {score}", font = font, fill = (0,0,0,100))
+        bg_draw.text((3, 18), f"LIFE", font = font, fill = (0,0,0,100))
+        temp = health
+        while temp > 0:
+            heart_position = 18 + temp*20
+            bg_image.paste(heart_image, (heart_position, 20), heart_image)
+            temp -= 1
+        try:
+            my_ch_img
+        except NameError: 
+            my_ch_img = my_character
+        if command['left_pressed'] == True: my_ch_img = my_character
+        if command['right_pressed'] == True: my_ch_img = my_character_opp
+        bg_image.paste(my_ch_img, tuple(my_ch.position), my_ch_img)
+        if fireball:
+            if fireball.state == 'left':
+                bg_image.paste(fire_opp_image, tuple(fireball.position), fire_opp_image)
+            else:
+                bg_image.paste(fire_image, tuple(fireball.position), fire_image)
 
-    hit = my_ch.heart_check(hearts)
-    if hit != -1:
-        health += 1
-        hearts[hit] = 0
+    if command['down_pressed'] == True:
+        if end_page:
+            end_page = 0
+    if command['up_pressed'] == True:
+        if not end_page:
+            if start_page:
+                start_page = 0
 
-    #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
-    bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-    temp = cloud_start
-    while temp > -240:
-        bg_image.paste(cloud_image, (0, temp), cloud_image)
-        temp -= 240
-    for block in blocks:
-        if block == my_base: pass
-        if block.icy == 'true':
-            bg_image.paste(icy_image.resize(tuple(map(int, (block.length, 20)))), tuple(block.position))
-        else:
-            bg_image.paste(block_image.resize(tuple(map(int,(block.length, 20)))), tuple(block.position))
-    if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
-    for enemy in enemies:
-        if enemy:
-            enemy_img = enemy_image if enemy.v > 0 else enemy_opp_image
-            bg_image.paste(enemy_img, tuple(enemy.position), enemy_img)
-    for heart in hearts:
-        if heart:
-            bg_image.paste(heart_image, tuple(heart.position), heart_image)
-    font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
-    bg_draw.text((3, 2), f"SCORE {score}", font = font, fill = (0,0,0,100))
-    bg_draw.text((3, 18), f"LIFE", font = font, fill = (0,0,0,100))
-    temp = health
-    while temp > 0:
-        heart_position = 18 + temp*20
-        bg_image.paste(heart_image, (heart_position, 20), heart_image)
-        temp -= 1
-    try:
-        my_ch_img
-    except NameError: 
-        my_ch_img = my_character
-    if command['left_pressed'] == True: my_ch_img = my_character
-    if command['right_pressed'] == True: my_ch_img = my_character_opp
-    bg_image.paste(my_ch_img, tuple(my_ch.position), my_ch_img)
-    if fireball:
-        if fireball.state == 'left':
-            bg_image.paste(fire_opp_image, tuple(fireball.position), fire_opp_image)
-        else:
-            bg_image.paste(fire_image, tuple(fireball.position), fire_image)
+    if start_page == 1:
+        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (0, 0, 0, 30))
+
+    if end_page == 1:
+        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (0, 0, 0, 30))
+
     joystick.disp.image(bg_image)
-    print(cooltime)
+    print(start_page, end_page)
