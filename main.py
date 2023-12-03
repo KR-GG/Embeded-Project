@@ -61,11 +61,13 @@ class Joystick:
 joystick = Joystick()
 
 bg_image = Image.new("RGB", (joystick.width, joystick.height))
-star_character = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/star_character.png')
+my_character = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch.png')
+my_character_opp = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch_opp.png')
 base_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_240_20.png')
 block_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20.png')
 icy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20_icy.png')
 enemy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_img.png')
+enemy_opp_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_opp_img.png')
 cloud_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/cloud_img.png')
 
 bg_draw = ImageDraw.Draw(bg_image)
@@ -167,10 +169,16 @@ class Character:
 
 class Enemy:
     def __init__(self, block):
-        self.position = np.array([block.position[0] + random.randint(1, block.length - 11), block.position[1] - 25])
+        self.position = np.array([block.position[0] + random.randint(0, block.length - 10), block.position[1] - 25])
+        self.v = 2
 
     def re_positioning(self, block):
         self.position[1] = block.position[1] -25
+        if self.position[0] >= block.position[0] + block.length - 10:
+            self.v = -2
+        elif self.position[0] <= block.position[0] + 10:
+            self.v = 2
+        self.position[0] += self.v
 
 class Base:
     def __init__(self):
@@ -394,9 +402,16 @@ while True:
     if stair == 0: bg_image.paste(base_image, tuple(my_base.position))
     for enemy in enemies:
         if enemy:
-            bg_image.paste(enemy_image, tuple(enemy.position), enemy_image)
+            enemy_img = enemy_image if enemy.v > 0 else enemy_opp_image
+            bg_image.paste(enemy_img, tuple(enemy.position), enemy_img)
     bg_draw.text((0, 5), f"SCORE {score}", (0,0,0,100))
     bg_draw.text((0, 15), f"LIFE {health}", (0,0,0,100))
-    bg_image.paste(star_character, tuple(my_ch.position), star_character)
+    try:
+        my_ch_img
+    except NameError: 
+        my_ch_img = my_character
+    if command['left_pressed'] == True: my_ch_img = my_character
+    if command['right_pressed'] == True: my_ch_img = my_character_opp
+    bg_image.paste(my_ch_img, tuple(my_ch.position), my_ch_img)
     joystick.disp.image(bg_image)
     print(stair)
