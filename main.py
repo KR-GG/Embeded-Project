@@ -61,9 +61,11 @@ class Joystick:
 joystick = Joystick()
 
 font = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/HedvigLettersSans-Regular.ttf", 15)
-font_title = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 50)
-font_gameover = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 45)
-font_ranking = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 25)
+font_small = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/HedvigLettersSans-Regular.ttf", 12)
+font_title_60 = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 60)
+font_title_45 = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 45)
+font_title_40 = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 40)
+font_title_25 = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 25)
 
 bg_image = Image.new("RGB", (joystick.width, joystick.height))
 my_character = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/pink_ch.png')
@@ -77,6 +79,7 @@ cloud_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/cloud_img.pn
 fire_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/fire.png')
 fire_opp_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/fire_opp.png')
 heart_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/heart.png')
+rule_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/rule.png')
 
 bg_draw = ImageDraw.Draw(bg_image)
 
@@ -568,45 +571,53 @@ while True:
 
     if start_page == 1:
         bg_image.paste(cloud_image, (0, 0), cloud_image)
-        bg_draw.text((50, 50), "PONG!", font = font_title)
+        bg_image.paste(base_image, tuple(my_base.position))
+        bg_draw.text((55, 50), "PONG!", font = font_title_60, fill=(203,153,000))
+        bg_draw.text((45, 150), "Press -> to start GAME", font = font, fill=(0,0,0))
 
     if start_page == 2:
-        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (10,10,10, 30))
-        bg_draw.text((50,50), "#how to", font = font_title)
+        bg_image.paste(rule_image, (0,0), rule_image)
+        bg_draw.text((28,22), "HOW TO PLAY", font = font_title_40, fill = (204,102,0))
+        bg_draw.text((33,69), "Jump to the next block!", font = font_small, fill = (0,0,0))
+        bg_draw.text((40,82), "jump:#5     attack:#6", font = font_small, fill = (0,0,0))
+        bg_draw.text((33,98), "Stay away               Take hearts", font = font_small, fill = (0,0,0))
+        bg_draw.text((33,111), "from enemies!      and keep alive", font = font_small, fill = (0,0,0))
 
     if start_page == 3:
         bg_image.paste(cloud_image, (0, 0), cloud_image)
-        bg_draw.text((50, 50), "PONG!", font = font_title)
+        bg_image.paste(base_image, tuple(my_base.position))
+        bg_draw.text((55, 50), "PONG!", font = font_title_60, fill=(203,153,000))
+        bg_draw.text((45, 150), "Press -> to start GAME", font = font, fill=(0,0,0))
 
     if end_page == 1:
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (10,10,10, 30))
-        bg_draw.text((20,5), "GAME OVER", font = font_gameover, fill=(153,000,51))
-        bg_draw.text((20,210), "My SCORE", font = font_ranking, fill=(255,204,000))
-        bg_draw.text((140,210), f"{last_score}", font = font_ranking, fill=(255,204,000))
-        bg_draw.text((20,60), "1st SCORE", font = font_ranking)
-        bg_draw.text((20,90), "2nd SCORE", font = font_ranking)
-        bg_draw.text((20,120), "3rd SCORE", font = font_ranking)
-        bg_draw.text((20,150), "4th SCORE", font = font_ranking)
-        bg_draw.text((20,180), "5th SCORE", font = font_ranking)
+        bg_draw.text((20,5), "GAME OVER", font = font_title_45, fill=(153,000,51))
+        bg_draw.text((20,210), "My SCORE", font = font_title_25, fill=(255,204,000))
+        bg_draw.text((140,210), f"{last_score}", font = font_title_25, fill=(255,204,000))
+        bg_draw.text((20,60), "1st SCORE", font = font_title_25)
+        bg_draw.text((20,90), "2nd SCORE", font = font_title_25)
+        bg_draw.text((20,120), "3rd SCORE", font = font_title_25)
+        bg_draw.text((20,150), "4th SCORE", font = font_title_25)
+        bg_draw.text((20,180), "5th SCORE", font = font_title_25)
 
         try:
-            bg_draw.text((140,60), f"{records[0]}", font = font_ranking)
+            bg_draw.text((140,60), f"{records[0]}", font = font_title_25)
         except IndexError:
             pass
         try:
-            bg_draw.text((140,90), f"{records[1]}", font = font_ranking)
+            bg_draw.text((140,90), f"{records[1]}", font = font_title_25)
         except IndexError:
             pass
         try:
-            bg_draw.text((140,120), f"{records[2]}", font = font_ranking)
+            bg_draw.text((140,120), f"{records[2]}", font = font_title_25)
         except IndexError:
             pass
         try:
-            bg_draw.text((140,150), f"{records[3]}", font = font_ranking)
+            bg_draw.text((140,150), f"{records[3]}", font = font_title_25)
         except IndexError:
             pass
         try:
-            bg_draw.text((140,180), f"{records[4]}", font = font_ranking)
+            bg_draw.text((140,180), f"{records[4]}", font = font_title_25)
         except IndexError:
             pass
 
