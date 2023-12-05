@@ -60,23 +60,23 @@ class Joystick:
 
 joystick = Joystick()
 
-font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
-font_title = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 50)
-font_gameover = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 45)
-font_ranking = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 25)
+font = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/HedvigLettersSans-Regular.ttf", 15)
+font_title = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 50)
+font_gameover = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 45)
+font_ranking = ImageFont.truetype("/home/kau-esw/Desktop/Embeded-Project/font/BlakaInk-Regular.ttf", 25)
 
 bg_image = Image.new("RGB", (joystick.width, joystick.height))
-my_character = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch.png')
-my_character_opp = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch_opp.png')
-base_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_240_20.png')
-block_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20.png')
-icy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/ground_120_20_icy.png')
-enemy_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_img.png')
-enemy_opp_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/enemy_opp_img.png')
-cloud_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/cloud_img.png')
-fire_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/fire.png')
-fire_opp_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/fire_opp.png')
-heart_image = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/heart.png')
+my_character = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/pink_ch.png')
+my_character_opp = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/pink_ch_opp.png')
+base_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/ground_240_20.png')
+block_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/ground_120_20.png')
+icy_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/ground_120_20_icy.png')
+enemy_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/enemy_img.png')
+enemy_opp_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/enemy_opp_img.png')
+cloud_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/cloud_img.png')
+fire_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/fire.png')
+fire_opp_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/fire_opp.png')
+heart_image = Image.open('/home/kau-esw/Desktop/Embeded-Project/res/heart.png')
 
 bg_draw = ImageDraw.Draw(bg_image)
 
@@ -575,7 +575,7 @@ while True:
         bg_draw.text((50,50), "#how to", font = font_title)
 
     if start_page == 3:
-        bg_image.paste(cloud_image, (0, temp), cloud_image)
+        bg_image.paste(cloud_image, (0, 0), cloud_image)
         bg_draw.text((50, 50), "PONG!", font = font_title)
 
     if end_page == 1:
