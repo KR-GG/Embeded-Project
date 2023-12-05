@@ -594,11 +594,11 @@ while True:
         bg_draw.text((20,5), "GAME OVER", font = font_title_45, fill=(153,000,51))
         bg_draw.text((20,210), "My SCORE", font = font_title_25, fill=(255,204,000))
         bg_draw.text((140,210), f"{last_score}", font = font_title_25, fill=(255,204,000))
-        bg_draw.text((20,60), "1st SCORE", font = font_title_25)
-        bg_draw.text((20,90), "2nd SCORE", font = font_title_25)
-        bg_draw.text((20,120), "3rd SCORE", font = font_title_25)
-        bg_draw.text((20,150), "4th SCORE", font = font_title_25)
-        bg_draw.text((20,180), "5th SCORE", font = font_title_25)
+        bg_draw.text((20,60), "1st", font = font_title_25)
+        bg_draw.text((20,90), "2nd", font = font_title_25)
+        bg_draw.text((20,120), "3rd", font = font_title_25)
+        bg_draw.text((20,150), "4th", font = font_title_25)
+        bg_draw.text((20,180), "5th", font = font_title_25)
 
         try:
             bg_draw.text((140,60), f"{records[0]}", font = font_title_25)
@@ -622,4 +622,3 @@ while True:
             pass
 
     joystick.disp.image(bg_image)
-    print(start_page, end_page)
