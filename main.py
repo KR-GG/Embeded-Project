@@ -60,6 +60,11 @@ class Joystick:
 
 joystick = Joystick()
 
+font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
+font_title = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 50)
+font_gameover = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 45)
+font_ranking = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/BlakaInk-Regular.ttf", 25)
+
 bg_image = Image.new("RGB", (joystick.width, joystick.height))
 my_character = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch.png')
 my_character_opp = Image.open('/home/kau-esw/Desktop/jupyter/Project#1/res/pink_ch_opp.png')
@@ -151,17 +156,17 @@ class Character:
     def on_ground(self, ground):
         return ground.position[1] <= self.position[1]+20 <= ground.position[1]+20 and ground.position[0] <= self.position[0]+10 <= ground.position[0] + ground.length
     
-    def move_up(self, t_up, cloud_start):
+    def move_up(self, t_up, bg_start):
         if t_up:
             self.position[1] += 10
-            return cloud_start + 10
-        return cloud_start
+            return bg_start + 10
+        return bg_start
 
-    def move_down(self, t_down, cloud_start):
+    def move_down(self, t_down, bg_start):
         if t_down:
             self.position[1] -= 14
-            return cloud_start -14
-        return cloud_start
+            return bg_start -14
+        return bg_start
 
     def enemy_check(self, enemies):
         for index, enemy in enumerate(enemies):
@@ -235,8 +240,8 @@ class Base:
         self.enemy = 'false'
         self.icy = 'false'
         self.v = 0
-        self.position = np.array([0, 220])
         self.length = 240
+        self.position = np.array([0, 220])
 
     def moving(self, width):
         pass
@@ -276,25 +281,39 @@ class Block:
         if t_down:
             self.position[1] -= 14
 
-start_page = 1
+def create_gauge_bar(cooltime):
+    if cooltime == 0: return 0
+    image = Image.new("RGB", (25, 4), "white")
+    draw = ImageDraw.Draw(image)
+
+    draw.rectangle((0,0,25,4), outline="white")
+
+    fill = int((50-cooltime) / 2)
+    draw.rectangle((0,0,fill,4), fill=(255,102,0))
+    return image
+
+records = []
+record = 0
+last_score = 0
+start_page = 3
 end_page = 0
+delay = 0
 my_ch = Character()
 my_base = Base()
 blocks = [] # height: 380 / 310 / 240 / 170 / 100 / 30
 enemies = [0, 0, 0, 0, 0, 0]
 hearts = [0, 0, 0, 0, 0, 0]
 fireball = 0
-bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-cloud_start = 0
+cooltime = 0
+bg_start = 0
 health = 3
 stair = 0
+score = 0
 current_index = 2
 next_index = 3
 t_up = 0
 t_down = 0
 fall_stack = 0
-score = 0
-cooltime = 0
 spawn_h = 380
 while spawn_h >= 30:
     blocks.append(Block(joystick.width, spawn_h))
@@ -307,19 +326,12 @@ for index, block in enumerate(blocks):
         hearts[index] = Heart(block)
 
 while True:
+    delay -= 1 if delay else 0
     cooltime -= 1 if cooltime else 0
-    command = {'move': False, 'jump': False, 'attack': False, 'up_pressed': False , 'down_pressed': False, 'left_pressed': False, 'right_pressed': False}
+    command = {'move': False, 'jump': False, 'attack': False, 'left_pressed': False, 'right_pressed': False}
     
     if not joystick.button_A.value: # A pressed
         command['jump'] = True
-
-    if not joystick.button_U.value:  # up pressed
-        command['up_pressed'] = True
-        command['move'] = True
-
-    if not joystick.button_D.value:  # down pressed
-        command['down_pressed'] = True
-        command['move'] = True
 
     if not joystick.button_L.value:  # left pressed
         command['left_pressed'] = True
@@ -364,7 +376,7 @@ while True:
             t_up += 7 if stair else 5
             stair += 1
         
-        cloud_start = my_ch.move_up(t_up, cloud_start)
+        bg_start = my_ch.move_up(t_up, bg_start)
         for block in blocks:
             block.move_up(t_up)
         if fireball: fireball.move_up(t_up)
@@ -390,6 +402,9 @@ while True:
                 t_down += 5
 
         if fall_stack > 2:
+            delay = 10
+            record = score
+            last_score = record
             start_page = 1
             end_page = 1
             my_ch = Character()
@@ -398,17 +413,15 @@ while True:
             enemies = [0, 0, 0, 0, 0, 0]
             hearts = [0, 0, 0, 0, 0, 0]
             fireball = 0
-            bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-            cloud_start = 0
+            bg_start = 0
             health = 3
             stair = 0
+            score = 0
             current_index = 2
             next_index = 3
             t_up = 0
             t_down = 0
             fall_stack = 0
-            score = 0
-            cooltime = 0
             spawn_h = 380
             while spawn_h >= 30:
                 blocks.append(Block(joystick.width, spawn_h))
@@ -421,7 +434,7 @@ while True:
                     hearts[index] = Heart(block)
             continue
 
-        cloud_start = my_ch.move_down(t_down, cloud_start)
+        bg_start = my_ch.move_down(t_down, bg_start)
         for block in blocks:
             block.move_down(t_down)
         if fireball: fireball.move_down(t_down)
@@ -453,6 +466,9 @@ while True:
             enemies[hit] = 0
 
         if health == 0:
+            delay = 10
+            record = score
+            last_score = record
             start_page = 1
             end_page = 1
             my_ch = Character()
@@ -461,17 +477,15 @@ while True:
             enemies = [0, 0, 0, 0, 0, 0]
             hearts = [0, 0, 0, 0, 0, 0]
             fireball = 0
-            bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-            cloud_start = 0
+            bg_start = 0
             health = 3
             stair = 0
+            score = 0
             current_index = 2
             next_index = 3
             t_up = 0
             t_down = 0
             fall_stack = 0
-            score = 0
-            cooltime = 0
             spawn_h = 380
             while spawn_h >= 30:
                 blocks.append(Block(joystick.width, spawn_h))
@@ -491,7 +505,7 @@ while True:
 
         #그리는 순서가 중요합니다. 배경을 먼저 깔고 위에 그림을 그리고 싶었는데 그림을 그려놓고 배경으로 덮는 결과로 될 수 있습니다.
         bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (255, 255, 255, 100))
-        temp = cloud_start
+        temp = bg_start
         while temp > -240:
             bg_image.paste(cloud_image, (0, temp), cloud_image)
             temp -= 240
@@ -509,7 +523,6 @@ while True:
         for heart in hearts:
             if heart:
                 bg_image.paste(heart_image, tuple(heart.position), heart_image)
-        font = ImageFont.truetype("/home/kau-esw/Desktop/jupyter/Project#1/font/HedvigLettersSans-Regular.ttf", 15)
         bg_draw.text((3, 2), f"SCORE {score}", font = font, fill = (0,0,0,100))
         bg_draw.text((3, 18), f"LIFE", font = font, fill = (0,0,0,100))
         temp = health
@@ -529,20 +542,73 @@ while True:
                 bg_image.paste(fire_opp_image, tuple(fireball.position), fire_opp_image)
             else:
                 bg_image.paste(fire_image, tuple(fireball.position), fire_image)
+        if cooltime:
+            bar = create_gauge_bar(cooltime)
+            if bar:
+                bg_image.paste(bar, (my_ch.position[0]-2, my_ch.position[1]-8))
 
-    if command['down_pressed'] == True:
+    if record:
+        try:
+            records[4]
+        except IndexError:
+            records.append(record)
+        else:
+            if record > records[4]:
+                records[4] = record
+        record = 0
+        records.sort(reverse=True)
+
+    if command['right_pressed'] == True and delay == 0:
         if end_page:
             end_page = 0
-    if command['up_pressed'] == True:
-        if not end_page:
-            if start_page:
-                start_page = 0
+            delay += 5
+        elif start_page:
+            start_page -= 1
+            delay += 5
 
     if start_page == 1:
-        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (0, 0, 0, 30))
+        bg_image.paste(cloud_image, (0, 0), cloud_image)
+        bg_draw.text((50, 50), "PONG!", font = font_title)
+
+    if start_page == 2:
+        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (10,10,10, 30))
+        bg_draw.text((50,50), "#how to", font = font_title)
+
+    if start_page == 3:
+        bg_image.paste(cloud_image, (0, temp), cloud_image)
+        bg_draw.text((50, 50), "PONG!", font = font_title)
 
     if end_page == 1:
-        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (0, 0, 0, 30))
+        bg_draw.rectangle((0, 0, joystick.width, joystick.height), fill = (10,10,10, 30))
+        bg_draw.text((20,5), "GAME OVER", font = font_gameover, fill=(153,000,51))
+        bg_draw.text((20,210), "My SCORE", font = font_ranking, fill=(255,204,000))
+        bg_draw.text((140,210), f"{last_score}", font = font_ranking, fill=(255,204,000))
+        bg_draw.text((20,60), "1st SCORE", font = font_ranking)
+        bg_draw.text((20,90), "2nd SCORE", font = font_ranking)
+        bg_draw.text((20,120), "3rd SCORE", font = font_ranking)
+        bg_draw.text((20,150), "4th SCORE", font = font_ranking)
+        bg_draw.text((20,180), "5th SCORE", font = font_ranking)
+
+        try:
+            bg_draw.text((140,60), f"{records[0]}", font = font_ranking)
+        except IndexError:
+            pass
+        try:
+            bg_draw.text((140,90), f"{records[1]}", font = font_ranking)
+        except IndexError:
+            pass
+        try:
+            bg_draw.text((140,120), f"{records[2]}", font = font_ranking)
+        except IndexError:
+            pass
+        try:
+            bg_draw.text((140,150), f"{records[3]}", font = font_ranking)
+        except IndexError:
+            pass
+        try:
+            bg_draw.text((140,180), f"{records[4]}", font = font_ranking)
+        except IndexError:
+            pass
 
     joystick.disp.image(bg_image)
     print(start_page, end_page)
